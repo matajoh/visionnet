@@ -1,0 +1,243 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{09DFD3D5-61BB-4868-8689-B0FD3DCBA251}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>VisionNET</RootNamespace>
+    <AssemblyName>VisionNET</AssemblyName>
+    <StartupObject>
+    </StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <OldToolsVersion>3.5</OldToolsVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <TargetFrameworkProfile />
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+    <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">.\</SolutionDir>
+    <RestorePackages>true</RestorePackages>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>bin\Debug\VisionNET.XML</DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>bin\Release\VisionNET.XML</DocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Ionic.Zlib">
+      <HintPath>References\Ionic.Zlib.dll</HintPath>
+    </Reference>
+    <Reference Include="MathNet.Numerics">
+      <HintPath>packages\MathNet.Numerics.2.6.1\lib\net40\MathNet.Numerics.dll</HintPath>
+    </Reference>
+    <Reference Include="MathNet.Numerics.IO">
+      <HintPath>packages\MathNet.Numerics.2.6.1\lib\net40\MathNet.Numerics.IO.dll</HintPath>
+    </Reference>
+    <Reference Include="PresentationCore">
+      <RequiredTargetFramework>3.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase">
+      <RequiredTargetFramework>3.0</RequiredTargetFramework>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ArrayHandlers\ByteArrayHandler.cs" />
+    <Compile Include="ArrayHandlers\BooleanArrayHandler.cs" />
+    <Compile Include="BinaryImage.cs" />
+    <Compile Include="ColorSpaceConverters.cs" />
+    <Compile Include="Comparison\EarthMoversDistance.cs" />
+    <Compile Include="Comparison\TreeNode.cs" />
+    <Compile Include="Comparison\RBF.cs" />
+    <Compile Include="Comparison\SimilarityMatrix.cs" />
+    <Compile Include="Comparison\TreeHistogram.cs" />
+    <Compile Include="ConnectedComponents.cs" />
+    <Compile Include="DecisionForests\DecisionTreeExtensions.cs" />
+    <Compile Include="DecisionForests\HaarFeatureFactory.cs" />
+    <Compile Include="DecisionForests\INodeInfo.cs" />
+    <Compile Include="DecisionForests\LeafImage.cs" />
+    <Compile Include="DecisionForests\RectangleFeatureFactory.cs" />
+    <Compile Include="Enums.cs" />
+    <Compile Include="FAST.cs" />
+    <Compile Include="Gamma.cs" />
+    <Compile Include="HoughTransform.cs" />
+    <Compile Include="ImageCell.cs" />
+    <Compile Include="IO.cs" />
+    <Compile Include="Learning\CLTree.cs" />
+    <Compile Include="Learning\ConfusionMatrix.cs" />
+    <Compile Include="Learning\ArrayDataPoint.cs" />
+    <Compile Include="Learning\Evaluation.cs" />
+    <Compile Include="Learning\Features.cs" />
+    <Compile Include="Learning\GibbsImage.cs" />
+    <Compile Include="HyperRectangle.cs" />
+    <Compile Include="Learning\IDataPoint.cs" />
+    <Compile Include="Learning\KDTree.cs" />
+    <Compile Include="Learning\KMeans.cs" />
+    <Compile Include="Learning\LabelDictionary.cs" />
+    <Compile Include="Learning\LabelSet.cs" />
+    <Compile Include="Learning\LabelVector.cs" />
+    <Compile Include="Learning\RandomClusterTree.cs" />
+    <Compile Include="Learning\RankPair.cs" />
+    <Compile Include="Learning\Split.cs" />
+    <Compile Include="MatLab\ArrayTypes.cs" />
+    <Compile Include="MatLab\DataElement.cs" />
+    <Compile Include="MatLab\DataType.cs" />
+    <Compile Include="MatLab\Elements\CharacterArray.cs" />
+    <Compile Include="MatLab\Elements\miMATRIX.cs" />
+    <Compile Include="MatLab\Elements\NumericArray.cs" />
+    <Compile Include="MatLab\Elements\StructArray.cs" />
+    <Compile Include="MatLab\Elements\ValueType.cs" />
+    <Compile Include="MatLab\MAT5.cs" />
+    <Compile Include="MonochromeImage.cs" />
+    <Compile Include="Raw.cs" />
+    <Compile Include="Registration\AffineModel.cs" />
+    <Compile Include="Registration\CorrelatedDataset.cs" />
+    <Compile Include="Registration\HomographyModel.cs" />
+    <Compile Include="Registration\IDataSet.cs" />
+    <Compile Include="Registration\IModel.cs" />
+    <Compile Include="Registration\RANSAC.cs" />
+    <Compile Include="Texture\BarFilter.cs" />
+    <Compile Include="Texture\Filter.cs" />
+    <Compile Include="Texture\GaussianFilter.cs" />
+    <Compile Include="Texture\EdgeFilter.cs" />
+    <Compile Include="Texture\LaplacianFilter.cs" />
+    <Compile Include="Texture\MR8.cs" />
+    <Compile Include="VisionExtensions.cs" />
+    <Compile Include="PGM.cs" />
+    <Compile Include="PPM.cs" />
+    <Compile Include="ArrayHandlers\ShortArrayHandler.cs" />
+    <Compile Include="ArrayHandlers\IntegerArrayHandler.cs" />
+    <Compile Include="DecisionForests\BinaryFeatureFactory.cs" />
+    <Compile Include="Canny.cs" />
+    <Compile Include="DecisionForests\CombinationFeatureFactory.cs" />
+    <Compile Include="Comparison\PyramidMatch.cs" />
+    <Compile Include="DecisionForests\DecisionForest.cs" />
+    <Compile Include="ArrayHandlers\FloatArrayHandler.cs" />
+    <Compile Include="IArrayHandler.cs" />
+    <Compile Include="IMultichannelImage.cs" />
+    <Compile Include="Learning\DistributionImage.cs" />
+    <Compile Include="Learning\LabeledDataSet.cs" />
+    <Compile Include="Learning\LabelCounter.cs" />
+    <Compile Include="ColorConversion.cs" />
+    <Compile Include="ColorImage.cs" />
+    <Compile Include="Convolution.cs" />
+    <Compile Include="Learning\LabelImage.cs" />
+    <Compile Include="DecisionForests\UnaryFeatureFactory.cs" />
+    <Compile Include="DecisionForests\Decision.cs" />
+    <Compile Include="DiscreteContours.cs" />
+    <Compile Include="DistanceTransformImage.cs" />
+    <Compile Include="EigensystemImage.cs" />
+    <Compile Include="Gaussian.cs" />
+    <Compile Include="GradientImage.cs" />
+    <Compile Include="HaarFeatures.cs" />
+    <Compile Include="Harris.cs" />
+    <Compile Include="Learning\ImageDataPoint.cs" />
+    <Compile Include="IntegralImage.cs" />
+    <Compile Include="GrayscaleImage.cs" />
+    <Compile Include="Texture\FilterBank.cs" />
+    <Compile Include="Keypoint.cs" />
+    <Compile Include="DecisionForests\DecisionTree.cs" />
+    <Compile Include="Rectangle.cs" />
+    <Compile Include="RGBImage.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ScaleSpacePyramid.cs" />
+    <Compile Include="ThreadsafeRandom.cs" />
+    <Compile Include="Transforms.cs" />
+    <Compile Include="SecondMomentImage.cs" />
+    <Compile Include="ArrayHandlers\UnsignedShortArrayHandler.cs" />
+    <Compile Include="UpdateManager.cs" />
+    <Compile Include="Utilities.cs" />
+    <Compile Include="ZNPatches.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 3.1</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <PropertyGroup>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+  <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
+</Project>
