@@ -17,7 +17,7 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <TargetFrameworkProfile />
     <PublishUrl>publish\</PublishUrl>
@@ -47,6 +47,7 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DocumentationFile>bin\Debug\VisionNET.XML</DocumentationFile>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -57,6 +58,31 @@
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DocumentationFile>bin\Release\VisionNET.XML</DocumentationFile>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>bin\Debug\VisionNET.XML</DocumentationFile>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DocumentationFile>bin\Release\VisionNET.XML</DocumentationFile>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Ionic.Zlib">
@@ -96,12 +122,14 @@
     <Compile Include="Comparison\TreeHistogram.cs" />
     <Compile Include="ConnectedComponents.cs" />
     <Compile Include="DecisionForests\DecisionTreeExtensions.cs" />
+    <Compile Include="DecisionForests\FilterBankFeatureFactory.cs" />
     <Compile Include="DecisionForests\HaarFeatureFactory.cs" />
     <Compile Include="DecisionForests\INodeInfo.cs" />
     <Compile Include="DecisionForests\LeafImage.cs" />
     <Compile Include="DecisionForests\RectangleFeatureFactory.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="FAST.cs" />
+    <Compile Include="FilterBankImage.cs" />
     <Compile Include="Gamma.cs" />
     <Compile Include="HoughTransform.cs" />
     <Compile Include="ImageCell.cs" />
@@ -136,7 +164,7 @@
     <Compile Include="Registration\AffineModel.cs" />
     <Compile Include="Registration\CorrelatedDataset.cs" />
     <Compile Include="Registration\HomographyModel.cs" />
-    <Compile Include="Registration\IDataSet.cs" />
+    <Compile Include="Registration\IRegistrationDataSet.cs" />
     <Compile Include="Registration\IModel.cs" />
     <Compile Include="Registration\RANSAC.cs" />
     <Compile Include="Texture\BarFilter.cs" />

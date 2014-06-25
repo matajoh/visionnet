@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using VisionNET.Learning;
 using VisionNET.Comparison;
+using System.Threading.Tasks;
 
 namespace VisionNET.DecisionForests
 {
@@ -681,15 +682,27 @@ namespace VisionNET.DecisionForests
             return true;
         }
 
+        private class DecisionResult
+        {
+            public float[] LeftDistribution { get; set; }
+            public float[] RightDistribution { get; set; }
+            public Decider<T, D> Decider { get; set; }
+            public float Score { get; set; }
+        }
+
         private static DecisionTreeNode<T,D> computeDepthFirst(DecisionTreeNode<T,D> node, List<T> data, IFeatureFactory<T,D> factory, int numFeatures, int numThresholds, int numLabels, float[] labelWeights, int depth)
         {
             GC.Collect();
             if (data.Count == 0)
+            {
+                UpdateManager.WriteLine("No data at depth {0}", depth);
                 return null;
+            }
             if(data[0] is IComparable<T>)
                 data.Sort();
             if (checkDelta(data))
             {
+                UpdateManager.WriteLine("Delta function at depth {0}", depth);
                 int label = data[0].Label;
                 float[] dist = new float[numLabels];
                 dist[label] = 1;
@@ -700,19 +713,29 @@ namespace VisionNET.DecisionForests
             float bestScore = float.MinValue;
             float[] bestLeftDistribution = null;
             float[] bestRightDistribution = null;
+            List<Task<DecisionResult>> tasks = new List<Task<DecisionResult>>();
+            TaskFactory<DecisionResult> taskFactory = new TaskFactory<DecisionResult>();
             for (int i = 0; i < numFeatures; i++)
             {
-                float[] leftDistribution;
-                float[] rightDistribution;
-                Decider<T,D> decider = new Decider<T,D>(factory);
-                decider.LoadData(data);
-                float score = decider.ChooseThreshold(numThresholds, numLabels, labelWeights, out leftDistribution, out rightDistribution);
-                if (score > bestScore)
+                tasks.Add(taskFactory.StartNew(() =>
                 {
-                    bestScore = score;
-                    bestDecider = decider;
-                    bestLeftDistribution = leftDistribution;
-                    bestRightDistribution = rightDistribution;
+                    float[] leftDistribution;
+                    float[] rightDistribution;
+                    Decider<T, D> decider = new Decider<T, D>(factory);
+                    decider.LoadData(data);
+                    float score = decider.ChooseThreshold(numThresholds, numLabels, labelWeights, out leftDistribution, out rightDistribution);
+                    return new DecisionResult { LeftDistribution = leftDistribution, RightDistribution = rightDistribution, Decider = decider, Score = score };
+                }));
+            }
+            Task.WaitAll(tasks.ToArray());
+            foreach (var task in tasks)
+            {
+                if (task.Result.Score > bestScore)
+                {
+                    bestLeftDistribution = task.Result.LeftDistribution;
+                    bestRightDistribution = task.Result.RightDistribution;
+                    bestDecider = task.Result.Decider;
+                    bestScore = task.Result.Score;
                 }
             }
             float support = 0;
@@ -723,6 +746,7 @@ namespace VisionNET.DecisionForests
             }
             else support = dataCount;
             if(bestScore == float.MinValue || dataCount < MinimumSupport){
+                UpdateManager.WriteLine("Stopping due to lack of data at depth {0}, {1} < {2}", depth, dataCount, MinimumSupport);
                 float[] distribution = new float[labelWeights.Length];
                 for (int i = 0; i < dataCount; i++)
                     distribution[data[i].Label]++;
@@ -732,6 +756,7 @@ namespace VisionNET.DecisionForests
             }
             if (depth == MaximumDepth - 2)
             {
+                UpdateManager.WriteLine("Last branch node trained at depth {0}", depth);
                 node.Left = new DecisionTreeNode<T,D>(bestLeftDistribution);
                 node.Right = new DecisionTreeNode<T,D>(bestRightDistribution);
                 node.NodeType = NodeType.Branch;
@@ -747,6 +772,7 @@ namespace VisionNET.DecisionForests
                 else rightData.Add(data[i]);
             if(leftData.Count == 0 || rightData.Count == 0)
                 throw new Exception("Error");
+            UpdateManager.WriteLine("Branch node at depth {0} trained.", depth);
             node.Left = computeDepthFirst(new DecisionTreeNode<T,D>(), leftData, factory, numFeatures, numThresholds, numLabels, labelWeights, depth + 1);
             node.Right = computeDepthFirst(new DecisionTreeNode<T,D>(), rightData, factory, numFeatures, numThresholds, numLabels, labelWeights, depth + 1);
             node.Decider = bestDecider;
@@ -794,6 +820,7 @@ namespace VisionNET.DecisionForests
             public Decider<T,D> Decider;
             public float[] Values;
             public int[] Labels;
+            public float[] Weights;
 
             public SplitCandidate(List<int> indices, int index, int level)
             {
@@ -861,6 +888,9 @@ namespace VisionNET.DecisionForests
                         candidate.Values = new float[dataCount];
                     if(candidate.Labels == null)
                         candidate.Labels = new int[dataCount];
+                    if (candidate.Weights == null)
+                        candidate.Weights = new float[dataCount];
+
                     candidates.Enqueue(candidate);
                 }
                 float bestGain = float.MinValue;
@@ -894,8 +924,9 @@ namespace VisionNET.DecisionForests
                             T point = data[indices[j]];
                             candidate.Values[j] = point.FeatureValue;
                             candidate.Labels[j] = point.Label;
+                            candidate.Weights[j] = point.Weight;
                         }
-                        decider.SetData(candidate.Values, candidate.Labels);
+                        decider.SetData(candidate.Values, candidate.Weights, candidate.Labels);
                         float gain = candidate.Entropy + decider.ChooseThreshold(numThresholds, numLabels, labelWeights, out leftDistribution, out rightDistribution);
                         bestGain = Math.Max(gain, bestGain);
                         if ((gain > threshold || candidate.Level < MinimumDepth) && gain > candidate.EntropyGain)

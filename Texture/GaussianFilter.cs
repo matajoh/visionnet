@@ -8,6 +8,7 @@ namespace VisionNET.Texture
     /// <summary>
     /// A Gaussian filter.
     /// </summary>
+    [Serializable]
     public class GaussianFilter : Filter
     {
         /// <summary>

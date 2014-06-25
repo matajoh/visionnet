@@ -66,6 +66,8 @@ namespace VisionNET.DecisionForests
         [NonSerialized]
         private float[] _values;
         [NonSerialized]
+        private float[] _weights;
+        [NonSerialized]
         private int[] _labels;
         [NonSerialized]
         private float[] _thresholds;
@@ -84,6 +86,7 @@ namespace VisionNET.DecisionForests
         {
             _numExamples = numExamples;
             _values = new float[numExamples];
+            _weights = new float[numExamples];
             _labels = new int[numExamples];
 
             _interval = (float)_numExamples / (_numThresholds + 1);
@@ -138,11 +141,13 @@ namespace VisionNET.DecisionForests
         /// Sets the data this decider will use to choose a threshold.
         /// </summary>
         /// <param name="values">The values to use</param>
+        /// <param name="weights">The weights to use</param>
         /// <param name="labels">The labels</param>
-        public void SetData(float[] values, int[] labels)
+        public void SetData(float[] values, float[] weights, int[] labels)
         {
             _numExamples = values.Length;
             _values = values;
+            _weights = weights;
             _labels = labels;
 
             _interval = (float)_numExamples / (_numThresholds + 1);
@@ -176,6 +181,7 @@ namespace VisionNET.DecisionForests
                 _minValue = Math.Min(value, _minValue);
                 _maxValue = Math.Max(value, _maxValue);
                 _values[i] = value;
+                _weights[i] = data[i].Weight;
                 _labels[i] = data[i].Label;
             }
         }
@@ -301,6 +307,7 @@ namespace VisionNET.DecisionForests
                     _leftDistributions,
                     _rightDistributions,
                     _values,
+                    _weights,
                     _labels,
                     _thresholds,
                     _leftCounts,
@@ -310,6 +317,7 @@ namespace VisionNET.DecisionForests
                 _leftDistributions,
                 _rightDistributions,
                 _values,
+                _weights,
                 _labels,
                 _thresholds,
                 _leftCounts,

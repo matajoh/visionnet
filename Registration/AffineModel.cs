@@ -7,10 +7,18 @@ using System.IO;
 
 namespace VisionNET.Registration
 {
+    /// <summary>
+    /// Representation of an Affine transformation model.
+    /// </summary>
     public class AffineModel : IModel<Vector>
     {
         private Matrix _transform;
 
+        /// <summary>
+        /// Fit the model to the provided data.  Each Tuple represents the same point transformed from one context to another, 
+        /// and the Affine Model will attempt to find the Affine transformation which maximally fits all of the provided transformations.
+        /// </summary>
+        /// <param name="data">The data to use in fitting the model</param>
         public void Fit(List<Tuple<Vector, Vector>> data)
         {
             double[,] XValues = new double[data.Count * 2, 6];
@@ -48,6 +56,11 @@ namespace VisionNET.Registration
             Consensus = data.Count;
         }
 
+        /// <summary>
+        /// Transforms a vector using the current model.
+        /// </summary>
+        /// <param name="point">The original point</param>
+        /// <returns>The transformed point</returns>
         public Vector Transform(Vector point)
         {
             double[] values = new double[3];
@@ -56,13 +69,23 @@ namespace VisionNET.Registration
             return (Vector)_transform.Multiply(new DenseVector(values));
         }
 
+        /// <summary>
+        /// The number of data points which are correctly modeled by this affine transform model.
+        /// </summary>
         public int Consensus { get; set; }
 
+        /// <summary>
+        /// The minimum number of vectors needed to fit the model.
+        /// </summary>
         public int MinFitCount
         {
             get { return 3; }
         }
 
+        /// <summary>
+        /// Saves this model to a file.
+        /// </summary>
+        /// <param name="filename">The path to the file</param>
         public void Save(string filename)
         {
             StreamWriter output = new StreamWriter(filename);
@@ -71,6 +94,11 @@ namespace VisionNET.Registration
             output.Close();
         }
 
+        /// <summary>
+        /// Loads this model from a file.
+        /// </summary>
+        /// <param name="filename">The path to the file</param>
+        /// <returns>The model</returns>
         public static AffineModel Load(string filename)
         {
             StreamReader input = new StreamReader(filename);

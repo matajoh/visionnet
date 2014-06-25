@@ -9,6 +9,7 @@ namespace VisionNET.Texture
     /// <summary>
     /// Convolution filter which is computed over a patch.
     /// </summary>
+    [Serializable]
     public class Filter
     {
         private int _rows;

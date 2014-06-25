@@ -644,6 +644,13 @@ namespace VisionNET
             }
         }
 
+        /// <summary>
+        /// Returns a random subset of a list of a given size.
+        /// </summary>
+        /// <typeparam name="T">The type of the items in the list</typeparam>
+        /// <param name="values">The set of values</param>
+        /// <param name="size">The size of the desired subset</param>
+        /// <returns>A random subset of values</returns>
         public static List<T> RandomSubset<T>(this IEnumerable<T> values, int size)
         {
             Random rand = new Random();
@@ -660,6 +667,13 @@ namespace VisionNET
             return result;
         }
 
+        /// <summary>
+        /// Computes the squared L2 difference between two vectors with a value to use to allow early stopping.
+        /// </summary>
+        /// <param name="lhs">The left hand vector</param>
+        /// <param name="rhs">The right hand vector</param>
+        /// <param name="minDist">If the distance being computed exceeds this value, the function returns</param>
+        /// <returns>The distance</returns>
         public static double SquaredDistance(this Vector<double> lhs, Vector<double> rhs, double minDist = double.MaxValue)
         {
             double dist = 0;

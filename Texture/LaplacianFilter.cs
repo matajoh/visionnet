@@ -8,6 +8,7 @@ namespace VisionNET.Texture
     /// <summary>
     /// A 2D filter modeled from the laplacian of a Gaussian.
     /// </summary>
+    [Serializable]
     public class LaplacianFilter : Filter
     {
         /// <summary>

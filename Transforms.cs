@@ -46,6 +46,16 @@ namespace VisionNET
     /// </summary>
 	public static class Transforms
 	{
+        /// <summary>
+        /// Method which performs an affine transform on an image.
+        /// </summary>
+        /// <typeparam name="I">The type of the image</typeparam>
+        /// <param name="image">The image to transform</param>
+        /// <param name="affineTransform">The matrix representing the affine transform</param>
+        /// <param name="border">A border around the transformed image</param>
+        /// <param name="background">The background data to use for empty pixels in the transformed image</param>
+        /// <param name="method">The interpolation method to use</param>
+        /// <returns>A transformed image</returns>
         public static unsafe I Affine<I>(I image, Matrix affineTransform, int border, float[] background, InterpolationMethod method) where I:IMultichannelImage<float>, new()
         {
             int r, c, i;
@@ -490,6 +500,16 @@ namespace VisionNET
 			return result;
 		}
 
+        /// <summary>
+        /// Interplates a value from an array using linear interpolation. 
+        /// </summary>
+        /// <param name="src">The source array</param>
+        /// <param name="dst">Pointer to the destination</param>
+        /// <param name="srcRow">The row in the source array to interpolate</param>
+        /// <param name="srcColumn">The column in the source array to interpolate</param>
+        /// <param name="srcRows">The number of rows in the source array</param>
+        /// <param name="srcColumns">The number of columns in the source array</param>
+        /// <param name="channels">The number of channels to interpolate.  Channels are assumed to be in order starting at the destination pointer.</param>
         public static unsafe void InterpolateLinear(float* src, float* dst, float srcRow, float srcColumn, int srcRows, int srcColumns, int channels)
         {
             int i = (int)srcRow;
@@ -573,6 +593,16 @@ namespace VisionNET
 			return result;
 		}
 
+        /// <summary>
+        /// Interplates a value from an array using cubic interpolation. 
+        /// </summary>
+        /// <param name="src">The source array</param>
+        /// <param name="dst">Pointer to the destination</param>
+        /// <param name="srcRow">The row in the source array to interpolate</param>
+        /// <param name="srcColumn">The column in the source array to interpolate</param>
+        /// <param name="srcRows">The number of rows in the source array</param>
+        /// <param name="srcColumns">The number of columns in the source array</param>
+        /// <param name="channels">The number of channels to interpolate.  Channels are assumed to be in order starting at the destination pointer.</param>
         public static unsafe void InterpolateCubic(float* src, float*dst, float srcRow, float srcColumn, int srcRows, int srcColumns, int channels)
         {
             int i = (int)srcRow;

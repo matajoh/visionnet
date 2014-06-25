@@ -34,6 +34,7 @@ namespace VisionNET.Learning
         private short _row, _column;
         private int _label;
         private float _featureValue;
+        private float _weight;
 
         /// <summary>
         /// Default Constructor.
@@ -49,12 +50,14 @@ namespace VisionNET.Learning
         /// <param name="row">Image row</param>
         /// <param name="column">Image column</param>
         /// <param name="label">Ground truth label</param>
-        public ImageDataPoint(IMultichannelImage<T> image, short row, short column, int label)
+        /// <param name="weight">Weight</param>
+        public ImageDataPoint(IMultichannelImage<T> image, short row, short column, int label, float weight = 1f)
         {
             _image = image;
             _row = row;
             _column = column;
             _label = label;
+            _weight = weight;
         }
 
         /// <summary>
@@ -125,6 +128,21 @@ namespace VisionNET.Learning
             set
             {
                 _column = value;
+            }
+        }
+
+        /// <summary>
+        /// Weight of the data point.
+        /// </summary>
+        public float Weight
+        {
+            get
+            {
+                return _weight;
+            }
+            set
+            {
+                _weight = value;
             }
         }
 
@@ -203,6 +221,7 @@ namespace VisionNET.Learning
             clone._featureValue = _featureValue;
             clone._label = _label;
             clone._image = _image;
+            clone._weight = _weight;
             return clone;
         }
     }

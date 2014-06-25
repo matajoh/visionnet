@@ -5,8 +5,16 @@ using System.Text;
 
 namespace VisionNET.Texture
 {
-    class MR8 : FilterBank
+    /// <summary>
+    /// Implements the MR8 or maximum response 8 filter bank from "A Statistical Approach to Texture Classification from Single Images" by Varma and Zisserman.
+    /// </summary>
+    [Serializable]
+    public class MR8 : FilterBank
     {
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        /// <param name="channel">The channel to use when computing the filter responses.</param>
         public MR8(int channel) : base(generateFilters(channel))
         {
         }
@@ -51,11 +59,28 @@ namespace VisionNET.Texture
             maxResponse[3] = max(rawResponse, 18, 24);
             maxResponse[4] = max(rawResponse, 24, 30);
             maxResponse[5] = max(rawResponse, 30, 36);
-            maxResponse[6] = rawResponse[37];
-            maxResponse[7] = rawResponse[38];
+            maxResponse[6] = rawResponse[36];
+            maxResponse[7] = rawResponse[37];
             return maxResponse;
         }
 
+        /// <summary>
+        /// For a maximum response filter, the descriptor length is not equal to the number of filters in the bank, but in this case is instead 8.
+        /// </summary>
+        public override int DescriptorLength
+        {
+            get
+            {
+                return 8;
+            }
+        }
+
+        /// <summary>
+        /// Computes the descriptor as the maximums of an array of filter responses.
+        /// </summary>
+        /// <param name="samples">Samples to compute the filter bank response for</param>
+        /// <param name="pyramid">Pyramid to use when computing responses</param>
+        /// <returns>Filter bank descriptor</returns>
         public override List<Keypoint> Compute<T>(List<ScaleSpaceSample> samples, ScaleSpacePyramid<T> pyramid)
         {
             List<Keypoint> points = base.Compute<T>(samples, pyramid);
@@ -64,6 +89,11 @@ namespace VisionNET.Texture
             return points;
         }
 
+        /// <summary>
+        /// Computes the maximum response of the filter bank at the provided point.
+        /// </summary>
+        /// <param name="point">Desired location</param>
+        /// <returns>Filter response</returns>
         public override float[] Compute(Learning.ImageDataPoint<float> point)
         {
             return maximumResponse(base.Compute(point));

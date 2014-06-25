@@ -25,6 +25,7 @@ namespace VisionNET.Texture
     /// <summary>
     /// Calculates a descriptor as an array of filter responses for a patch.
     /// </summary>
+    [Serializable]
     public class FilterBank
     {
         private List<Filter> _filters;
@@ -81,6 +82,17 @@ namespace VisionNET.Texture
             get
             {
                 return _filters.Count;
+            }
+        }
+
+        /// <summary>
+        /// The length of the final output of the filter bank.
+        /// </summary>
+        public virtual int DescriptorLength
+        {
+            get
+            {
+                return Count;
             }
         }
 

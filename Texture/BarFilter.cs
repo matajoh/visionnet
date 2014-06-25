@@ -8,6 +8,7 @@ namespace VisionNET.Texture
     /// <summary>
     /// Filter based on the second deriviative of a Gaussian.
     /// </summary>
+    [Serializable]
     public class BarFilter : Filter
     {
         /// <summary>

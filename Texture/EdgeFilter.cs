@@ -8,6 +8,7 @@ namespace VisionNET.Texture
     /// <summary>
     /// A filter based on the first derivative of a Gaussian.
     /// </summary>
+    [Serializable]
     public class EdgeFilter : Filter
     {
         /// <summary>

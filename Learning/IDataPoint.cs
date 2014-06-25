@@ -40,5 +40,10 @@ namespace VisionNET.Learning
         /// A feature value computed for the datapoint.
         /// </summary>
         float FeatureValue { get; set; }
+
+        /// <summary>
+        /// A weight for this data point.
+        /// </summary>
+        float Weight { get; set; }
     }
 }

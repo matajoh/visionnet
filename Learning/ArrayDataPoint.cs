@@ -18,6 +18,7 @@ namespace VisionNET.Learning
         /// </summary>
         public ArrayDataPoint()
         {
+            Weight = 1;
         }
 
         /// <summary>
@@ -27,6 +28,7 @@ namespace VisionNET.Learning
         public ArrayDataPoint(int length)
         {
             _data = new T[length];
+            Weight = 1;
         }       
 
         /// <summary>
@@ -64,7 +66,13 @@ namespace VisionNET.Learning
             clone._data = (T[])_data.Clone();
             clone.Label = Label;
             clone.FeatureValue = FeatureValue;
+            clone.Weight = Weight;
             return clone;
         }
+
+        /// <summary>
+        /// Weight of this point.
+        /// </summary>
+        public float Weight{get;set;}
     }
 }

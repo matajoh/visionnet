@@ -35,6 +35,7 @@ namespace VisionNET.Learning
             float[,] leftDistributions,
             float[,] rightDistributions,
             float[] values,
+            float[] weights,
             int[] labels,
             float[] thresholds,
             float[] leftCounts,
@@ -46,6 +47,7 @@ namespace VisionNET.Learning
                 leftDistributions,
                 rightDistributions,
                 values,
+                weights,
                 labels,
                 thresholds,
                 leftCounts,
@@ -85,6 +87,7 @@ namespace VisionNET.Learning
             float[,] leftDistributions,
             float[,] rightDistributions,
             float[] values,
+            float[] weights,
             int[] labels,
             float[] thresholds,
             float[] leftCounts,
@@ -116,35 +119,37 @@ namespace VisionNET.Learning
             float minThresh = thresholds[0];
             float maxThresh = thresholds[_numThresholds - 1];
             int length = values.Length;
-            fixed (float* valuesSrc = values)
+            fixed (float* valuesSrc = values, weightsSrc = weights)
             {
                 fixed (int* labelsSrc = labels)
                 {
                     float* valuesPtr = valuesSrc;
+                    float* weightsPtr = weightsSrc;
                     int* labelsPtr = labelsSrc;
-                    for (int i = 0; i < length; i++, valuesPtr++, labelsPtr++)
+                    for (int i = 0; i < length; i++, valuesPtr++, labelsPtr++, weightsPtr++)
                     {
                         int label = *labelsPtr;
                         float value = *valuesPtr;
+                        float weight = *weightsPtr;
                         if (value <= minThresh)
                         {
-                            leftDistributions[0,label]++;
-                            leftCounts[0]++;
+                            leftDistributions[0,label] += weight;
+                            leftCounts[0] += weight;
                         }
                         else if (value > maxThresh)
                         {
-                            rightDistributions[_numThresholds - 1, label]++;
-                            rightCounts[_numThresholds - 1]++;
+                            rightDistributions[_numThresholds - 1, label] += weight;
+                            rightCounts[_numThresholds - 1] += weight;
                         }
                         else
                         {
                             int index = Array.BinarySearch<float>(thresholds, value);
                             if (index < 0)
                                 index = ~index;
-                            leftDistributions[index,label]++;
-                            leftCounts[index]++;
-                            rightDistributions[index - 1,label]++;
-                            rightCounts[index - 1]++;
+                            leftDistributions[index,label] += weight;
+                            leftCounts[index] += weight;
+                            rightDistributions[index - 1,label] += weight;
+                            rightCounts[index - 1] += weight;
                         }
                     }
                 }

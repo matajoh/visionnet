@@ -8,10 +8,17 @@ using MathNet.Numerics.LinearAlgebra.Double.Factorization;
 
 namespace VisionNET.Registration
 {
+    /// <summary>
+    /// Model of a transformation in two dimensional space using homogenous coordinates.
+    /// </summary>
     public class HomographyModel : IModel<Vector>
     {
         private Matrix _transform;
 
+        /// <summary>
+        /// Fits the model to the provided data.
+        /// </summary>
+        /// <param name="data">Each tuple represents a data point before and after transformation</param>
         public void Fit(List<Tuple<Vector, Vector>> data)
         {
             double[,] XValues = new double[data.Count * 2, 9];
@@ -45,6 +52,11 @@ namespace VisionNET.Registration
             Consensus = data.Count;
         }
 
+        /// <summary>
+        /// Transforms the point according to the fitted model.
+        /// </summary>
+        /// <param name="point">The point to transform</param>
+        /// <returns>The transformed point</returns>
         public Vector Transform(Vector point)
         {
             double[] values = new double[3];
@@ -54,13 +66,23 @@ namespace VisionNET.Registration
             return new DenseVector(new double[] { result[0] / result[2], result[1] / result[2] });
         }
 
+        /// <summary>
+        /// The number of points which concur with this model.
+        /// </summary>
         public int Consensus { get; set; }
 
+        /// <summary>
+        /// The minimum number of points needed to fit the model.
+        /// </summary>
         public int MinFitCount
         {
             get { return 4; }
         }
-
+        
+        /// <summary>
+        /// Saves this model to a file.
+        /// </summary>
+        /// <param name="filename">The path to the file</param>
         public void Save(string filename)
         {
             StreamWriter output = new StreamWriter(filename);
@@ -69,6 +91,11 @@ namespace VisionNET.Registration
             output.Close();
         }
 
+        /// <summary>
+        /// Reads a model from a file.
+        /// </summary>
+        /// <param name="filename">The path to the file</param>
+        /// <returns>The model</returns>
         public static HomographyModel Load(string filename)
         {
             StreamReader input = new StreamReader(filename);

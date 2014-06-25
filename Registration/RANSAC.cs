@@ -5,6 +5,9 @@ using System.Text;
 
 namespace VisionNET.Registration
 {
+    /// <summary>
+    /// This class provides an implementation of RANdom SAmpling and Consensus, a standard algorithm for fitting registration models to correlated data.
+    /// </summary>
     public static class RANSAC
     {
         /// <summary>
@@ -18,7 +21,7 @@ namespace VisionNET.Registration
         /// <param name="errorThreshold">The error threshold (used to determine consensus)</param>
         /// <param name="minConsensus">The minimum consensus required for a model to be considered successful</param>
         /// <returns>The fitted model</returns>
-        public static M Fit<M, D, T>(D dataset, int numInterations, double errorThreshold, int minConsensus) where M:IModel<T>,new() where D:IDataSet<T>
+        public static M Fit<M, D, T>(D dataset, int numInterations, double errorThreshold, int minConsensus) where M:IModel<T>,new() where D:IRegistrationDataSet<T>
         {
             M bestModel = default(M);
             int maxConsensus = 0;
@@ -30,7 +33,7 @@ namespace VisionNET.Registration
                 List<Tuple<T, T>> maybeInliers = dataset.SampleInliers(maybeModel.MinFitCount);
                 maybeModel.Fit(maybeInliers);
 
-                List<Tuple<T,T>> consensus = dataset.GetConsensus(maybeInliers, maybeModel, errorThreshold);
+                List<Tuple<T,T>> consensus = dataset.GetConsensus(maybeModel, errorThreshold);
                 if (consensus.Count > maxConsensus)
                 {
                     maxConsensus = consensus.Count;
