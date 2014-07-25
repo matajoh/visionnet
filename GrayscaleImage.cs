@@ -17,6 +17,7 @@
  */
 
 using System;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace VisionNET
@@ -225,6 +226,31 @@ namespace VisionNET
         }
 
         /// <summary>
+        /// Converts this image to an RGB image, scaling the values so that the maximum value corresponds to a brightness of 255 and
+        /// the minimum value corresponds to a brightness of 0.
+        /// </summary>
+        /// <param name="color">Color to use in tinting the result</param>
+        /// <returns>An RGB depiction of this grayscale image</returns>
+        public RGBImage ToRGBImage(Color color)
+        {
+            float min, max;
+            getMinMax(out min, out max);
+            return ToRGBImage(min, max, color);
+        }
+
+        /// <summary>
+        /// Converts this image to an RGB image, scaling the values so that the maximum value corresponds to a brightness of 255 and
+        /// the minimum value corresponds to a brightness of 0.
+        /// </summary>
+        /// <param name="max">The maximum value to use</param>
+        /// <param name="min">The minimum value to use</param>
+        /// <returns>An RGB depiction of this grayscale image</returns>
+        public RGBImage ToRGBImage(float min, float max)
+        {
+            return ToRGBImage(min, max, Colors.White);
+        }
+
+        /// <summary>
         /// Returns a legacy Bitmap version of this image using the computed minimum and maximum values.
         /// </summary>
         /// <returns>A Bitmap representing this image</returns>
@@ -329,7 +355,7 @@ namespace VisionNET
         /// <returns>A Bitmap representing this image</returns>
         public unsafe BitmapSource ToBitmap(float min, float max)
         {
-            return ToRGBImage(min, max).ToBitmap();
+            return ToRGBImage(min, max, Colors.White).ToBitmap();
         }
 
         /// <summary>
@@ -337,13 +363,18 @@ namespace VisionNET
         /// </summary>
         /// <param name="min">Minimum value (corresponds to a brightness of 0)</param>
         /// <param name="max">Maximum value (corresponds to a brightness of 255)</param>
+        /// <param name="color">Color to use for tinting the image</param>
         /// <returns></returns>
-        public unsafe RGBImage ToRGBImage(float min, float max)
+        public unsafe RGBImage ToRGBImage(float min, float max, Color color)
         {
             RGBImage result = new RGBImage(Rows, Columns);
+            byte R = color.R;
+            byte G = color.G;
+            byte B = color.B;
             float scale = max - min;
             if (scale == 0)
                 scale = 1;
+            scale = 1.0f / scale;
             fixed (byte* dst = result.RawArray)
             {
                 fixed (float* src = _handler.RawArray)
@@ -358,10 +389,10 @@ namespace VisionNET
                             tmp = max;
                         if (tmp < min)
                             tmp = min;
-                        byte val = (byte)((255 * (tmp - min)) / scale);
-                        *dstPtr++ = val;
-                        *dstPtr++ = val;
-                        *dstPtr++ = val;
+                        float val = (tmp - min) * scale;
+                        *dstPtr++ = (byte)(val * R);
+                        *dstPtr++ = (byte)(val * G);
+                        *dstPtr++ = (byte)(val * B);
                     }
                 }
             }
@@ -405,7 +436,7 @@ namespace VisionNET
                         {
                             *dstPtr++ = 0;
                             *dstPtr++ = 0;
-                            *dstPtr++ = 0;
+                            *dstPtr++ = 255;
                         }
                         else if (x < .5f)
                         {

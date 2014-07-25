@@ -250,5 +250,25 @@ namespace VisionNET.Learning
             }
             return sb.ToString();
         }
+
+        /// <summary>
+        /// Adds the raw values of the two confusion matrices together.
+        /// </summary>
+        /// <param name="lhs">The first matrix</param>
+        /// <param name="rhs">The second matrix</param>
+        /// <returns>A new matrix with the sums of the values of the two matrices</returns>
+        public static ConfusionMatrix Add(ConfusionMatrix lhs, ConfusionMatrix rhs)
+        {
+            if (lhs._size != rhs._size)
+                throw new ArgumentException("Matrixes must be the same size");
+
+            int size = lhs._size;
+            ConfusionMatrix result = new ConfusionMatrix(size);
+            for (int r = 0; r < size; r++)
+                for (int c = 0; c < size; c++)
+                    result._matrix[r,c] = lhs._matrix[r, c] + rhs._matrix[r, c];
+            result.computeAccuracies();
+            return result;
+        }
     }
 }

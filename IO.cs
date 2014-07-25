@@ -63,9 +63,10 @@ namespace VisionNET
         /// <param name="item">The item to write</param>
         public static void Write<T>(string filename, T item)
         {
-            FileStream stream = new FileStream(filename, FileMode.Create, FileAccess.Write);
-            Write<T>(stream, item);
-            stream.Close();
+            using (FileStream stream = File.Open(filename, FileMode.Create, FileAccess.Write))
+            {
+                Write<T>(stream, item);
+            }
         }
         /// <summary>
         /// Writes <paramref name="item"/> to <paramref name="stream"/>.  If a method of the exact same signature exists in <typeparamref name="T"/> then it will attempt to use that one first,
@@ -110,14 +111,9 @@ namespace VisionNET
         /// <returns>The object</returns>
         public static T Read<T>(string filename)
         {
-            FileStream stream = File.OpenRead(filename);
-            try
+            using (FileStream stream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 return Read<T>(stream);
-            }
-            finally
-            {
-                stream.Close();
             }
         }
     }

@@ -47,6 +47,11 @@ namespace VisionNET.Learning
         }
 
         /// <summary>
+        /// An identifier for this data point
+        /// </summary>
+        public string ID { get; set; }
+
+        /// <summary>
         /// The label of the point.
         /// </summary>
         public int Label { get; set; }

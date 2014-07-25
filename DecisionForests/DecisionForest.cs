@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using VisionNET.Learning;
 using VisionNET.Comparison;
+using System.Threading.Tasks;
 
 namespace VisionNET.DecisionForests
 {
@@ -241,6 +242,29 @@ namespace VisionNET.DecisionForests
         }
 
         /// <summary>
+        /// Gets a sparse coding for this point, with one code per tree, where each dimension represents a code for that tree which can be compared
+        /// to other points classified by that tree using Euclidean distance and have that distance reflect the number of branches they share, i.e.
+        /// more branches shared = more similar = lower Euclidean distance.
+        /// </summary>
+        /// <param name="point">The point to code</param>
+        /// <returns>A T dimensional coding</returns>
+        public int[] GetSparseCoding(T point)
+        {
+            Task<int>[] tasks = new Task<int>[_numTrees];
+            TaskFactory<int> factory = new TaskFactory<int>();
+            for (int t = 0; t < _numTrees; t++)
+            {
+                tasks[t] = factory.StartNew(arg =>
+                {
+                    DecisionTree<T, D> tree = (DecisionTree<T, D>)arg;
+                    return tree.GetSparseCode(point);
+                }, _trees[t]);
+            }
+            Task.WaitAll(tasks);
+            return tasks.Select(o => o.Result).ToArray();
+        }
+
+        /// <summary>
         /// Normalizes the node distributions in the forest.
         /// </summary>
         public void Normalize()
@@ -332,11 +356,13 @@ namespace VisionNET.DecisionForests
             DecisionTree<T,D>[] trees = new DecisionTree<T,D>[numTrees];
             int count = 0;
             var indices = Enumerable.Range(0, numTrees).Select(o=>(byte)o);
+            if(splits[0][0] is IComparable<T>)
+                foreach (var split in splits)
+                    split.Sort();
             foreach(var i in indices)
             {
                 int split = i % splits.Length;
                 UpdateManager.WriteLine(string.Format("Training tree {0} of {1}...", i + 1, numTrees));
-                splits[split].Sort();
                 trees[i] = DecisionTree<T, D>.ComputeDepthFirst(splits[split], factory, numFeatures, numThresholds, numLabels, labelWeights);
                 trees[i].LabelCount = labelNames.Length;
                 count = trees[i].SetTreeLabel(i, count);

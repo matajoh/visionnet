@@ -11,32 +11,24 @@ namespace VisionNET.DecisionForests
     /// Factory which creates features that compute a filter bank at a point and then index into that filter bank's responses.
     /// </summary>
     [Serializable]
-    public class FilterBankFeatureFactory : IFeatureFactory<ImageDataPoint<float>,float[]>
+    public class FilterFeatureFactory : IFeatureFactory<ImageDataPoint<float>,float[]>
     {
         [Serializable]
-        private class FilterBankFeature : IFeature<ImageDataPoint<float>, float[]>
+        private class FilterFeature : IFeature<ImageDataPoint<float>, float[]>
         {
-            private FilterBank _fb;
-            private int _index;
-            private short _row, _column;
-            public FilterBankFeature(FilterBank fb, short row, short column, int index)
+            private Filter _filter;
+            public FilterFeature(Filter filter)
             {
-                _fb = fb;
-                _index = index;
-                _row = row;
-                _column = column;
+                _filter = filter;
             }
             public float Compute(ImageDataPoint<float> point)
             {
-                ImageDataPoint<float> test = point.Clone() as ImageDataPoint<float>;
-                test.Row += _row;
-                test.Column += _column;
-                return _fb.Compute(test)[_index];
+                return _filter.Compute(point);
             }
 
             public string Name
             {
-                get { return string.Format("{0}:{1} at ({2},{3})", _fb, _index, _row,_column); }
+                get { return _filter.ToString(); }
             }
 
             public string GenerateCode(string variableName)
@@ -50,18 +42,22 @@ namespace VisionNET.DecisionForests
             }
         }
 
-        private FilterBank[] _banks;
-        private int _boxSize;
+        private static readonly float[][] WEIGHTS = {
+                                        new float[]{.1f, .8f, .1f},
+                                        new float[]{.33f, .34f, .33f},
+                                        new float[]{.4f, .2f, .4f}
+                                    };
+        private IFilterFactory _factory;
+        
 
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="banks">Banks to select from when computing features.</param>
-        /// <param name="boxSize">The distance to sample away from a point (i.e. boxSize of 5 results in points that are (-5,5) from the point)</param>
-        public FilterBankFeatureFactory(FilterBank[] banks, int boxSize)
+        /// <param name="factory">Factory to use to generate the filters</param>
+        /// <param name="sampleWeights">Whether to randomly weight the filter samples</param>
+        public FilterFeatureFactory(IFilterFactory factory, bool sampleWeights)
         {
-            _banks = banks;
-            _boxSize = boxSize;
+            _factory = factory;
         }
 
         /// <summary>
@@ -70,11 +66,8 @@ namespace VisionNET.DecisionForests
         /// <returns>A filter bank feature</returns>
         public IFeature<ImageDataPoint<float>, float[]> Create()
         {
-            short row = (short)ThreadsafeRandom.Next(-_boxSize, _boxSize);
-            short column = (short)ThreadsafeRandom.Next(-_boxSize, _boxSize);
-            FilterBank fb = ThreadsafeRandom.SelectRandom(_banks);
-            int index = ThreadsafeRandom.Next(fb.DescriptorLength);
-            return new FilterBankFeature(fb, row, column, index);
+            return new FilterFeature(_factory.Create());
+
         }
 
         /// <summary>
@@ -84,7 +77,7 @@ namespace VisionNET.DecisionForests
         /// <returns>Whether it is a filter bank feature</returns>
         public bool IsProduct(IFeature<ImageDataPoint<float>, float[]> feature)
         {
-            return feature is FilterBankFeature;
+            return feature is FilterFeature;
         }
     }
 }

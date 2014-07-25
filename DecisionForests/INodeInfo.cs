@@ -70,6 +70,10 @@ namespace VisionNET.DecisionForests
         /// </summary>
         int LevelIndex { get; }
         /// <summary>
+        /// Code which, when compared to other codes in this tree, reflects the number of branches they share in Euclidean space.
+        /// </summary>
+        int SparseCode { get; }
+        /// <summary>
         /// Entropy of the distribution at this node.
         /// </summary>
         float Entropy { get; }

@@ -17,6 +17,7 @@
  */
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using VisionNET.Learning;
 
@@ -178,6 +179,8 @@ namespace VisionNET.DecisionForests
             for (int i = 0; i < count; i++)
             {
                 float value = _feature.Compute(data[i]);
+                if (double.IsNaN(value)) 
+                    Console.WriteLine("Invalid feature value");
                 _minValue = Math.Min(value, _minValue);
                 _maxValue = Math.Max(value, _maxValue);
                 _values[i] = value;
@@ -214,50 +217,34 @@ namespace VisionNET.DecisionForests
                 rightEntropy -= rightClassProb * Math.Log(rightClassProb, 2);
             }
 
-            // Compute expected gain
-            return (float)(-(_leftCounts[threshold] * leftEntropy + _rightCounts[threshold] * rightEntropy) / (_leftCounts[threshold]+_rightCounts[threshold]));
+            return -(float)((_leftCounts[threshold] * leftEntropy + _rightCounts[threshold] * rightEntropy)/(_leftCounts[threshold] + _rightCounts[threshold]));
+        }
+
+        private float calculateEnergy(int threshold)
+        {
+            // Uses entropy measure from LePetit CVPR 2005 paper
+            // Compute left and right entropies
+            double normLeft = 1 / (_leftCounts[threshold] + _numLabels * _dirichlet);
+            double normRight = 1 / (_rightCounts[threshold] + _numLabels * _dirichlet);
+            double leftEntropy = 0, rightEntropy = 0;
+            for (int c = 0; c < _numLabels; c++)
+            {
+                double leftClassProb = (_leftDistributions[threshold, c] + _dirichlet) * normLeft;
+                leftEntropy -= leftClassProb * Math.Log(leftClassProb, 2);
+
+                double rightClassProb = (_rightDistributions[threshold, c] + _dirichlet) * normRight;
+                rightEntropy -= rightClassProb * Math.Log(rightClassProb, 2);
+            }
+
+            double sum = _leftCounts[threshold] + _rightCounts[threshold];
+            double entropy = (_leftCounts[threshold] * leftEntropy + _rightCounts[threshold] * rightEntropy)/sum;
+            double balancePenalty = Math.Abs(_leftCounts[threshold] - _rightCounts[threshold])/sum;
+
+            return (float)(.9*entropy + .1*balancePenalty);
         }
 
         private void generateThresholds()
         {
-            //// Array-index based
-            //float[] points = new float[_numExamples];
-            //Array.Copy(_values, points, _numExamples);
-            //Array.Sort<float>(points);
-            //_minValue = points[0];
-            //_maxValue = points[points.Length-1];
-            //for (int i = 0; i < _numThresholds; i++)
-            //{
-            //    int index = (int)((i + 1) * _interval + _gauss.Sample());
-            //    if (index < 0)
-            //        index = 0;
-            //    if (index >= points.Length)
-            //        index = points.Length-1;
-            //for (int i = 0; i < _numThresholds; i++)
-            //{
-            //    int index = (int)(_rand.Next(0, _numExamples) + _gauss.Sample());
-            //    if (index < 0)
-            //        index = 0;
-            //    if (index >= _numExamples)
-            //        index = _numExamples - 1;
-
-            //    _thresholds[i] = _values[index];
-            //}
-
-            //// Uniform sampling
-            //    _thresholds[i] = points[index];
-            //}
-            //_minValue = float.MaxValue;
-            //_maxValue = float.MinValue;
-            //for (int i = 0; i < _numExamples; i++)
-            //{
-            //    _minValue = Math.Min(_minValue, _values[i]);
-            //    _maxValue = Math.Max(_maxValue, _values[i]);
-            //}
-            //float scale = _maxValue - _minValue;
-            //for (int i = 0; i < _numThresholds; i++)
-            //    _thresholds[i] = (float)(_rand.NextDouble() * scale + _minValue);
-
             // Gaussian
             _gauss = Gaussian.Estimate(_values);
             _thresholds[0] = (float)_gauss.Mean;
@@ -295,7 +282,7 @@ namespace VisionNET.DecisionForests
         /// <param name="numThresholds">Number of thresholds to try</param>
         /// <param name="numLabels">Number of labels</param>
         /// <param name="labelWeights">Weights for each label</param>
-        /// <param name="leftDistribution">Resulting label distribution for the right child if the chosen threshold is used</param>
+        /// <param name="leftDistribution">Resulting label distribution for the left child if the chosen threshold is used</param>
         /// <param name="rightDistribution">Resulting label distribution for the right child if the chosen threshold is used</param>
         /// <returns>The entropy gain from using the chosen threshold</returns>
         public float ChooseThreshold(int numThresholds, int numLabels, float[] labelWeights, out float[] leftDistribution, out float[] rightDistribution)
@@ -344,6 +331,56 @@ namespace VisionNET.DecisionForests
             if (_leftCounts[maxIndex] == 0 || _rightCounts[maxIndex] == 0)
                 return float.MinValue;
             return maxScore;
+        }
+
+        /// <summary>
+        /// Chooses a threshold from <paramref name="numThresholds"/> choices, and outputs the resulting label distributions
+        /// for the left and right children in <paramref name="leftDistribution"/> and <paramref name="rightDistribution"/>, respectively.
+        /// </summary>
+        /// <param name="numThresholds">Number of thresholds to try</param>
+        /// <param name="numLabels">Number of labels</param>
+        /// <param name="leftDistribution">Existing label distribution for the left child</param>
+        /// <param name="rightDistribution">Existing label distribution for the right child</param>
+        /// <returns>The entropy gain from using the chosen threshold</returns>
+        public float ChooseThreshold(int numThresholds, int numLabels, float[] leftDistribution, float[] rightDistribution)
+        {
+            updateThresholdArrays(numThresholds, numLabels);
+            generateThresholds();
+            _labelCounter.Count(
+                _leftDistributions,
+                _rightDistributions,
+                _values,
+                _weights,
+                _labels,
+                _thresholds,
+                _leftCounts,
+                _rightCounts);
+
+            for (int i = 0; i < numThresholds; i++)
+            {
+                _leftCounts[i] += leftDistribution.Sum();
+                _rightCounts[i] += rightDistribution.Sum();
+                for (int j = 0; j < _numLabels; j++)
+                {
+                    _leftDistributions[i, j] += leftDistribution[j];
+                    _rightDistributions[i, j] += rightDistribution[j];
+                }
+            }
+            int minIndex = -1;
+            float minEnergy = float.MaxValue;
+            for (int i = 0; i < _numThresholds; i++)
+            {
+                float energy = calculateEnergy(i);
+                if (energy < minEnergy)
+                {
+                    minEnergy = energy;
+                    minIndex = i;
+                }
+            }
+            _threshold = _thresholds[minIndex];
+            if (_leftCounts[minIndex] == 0 || _rightCounts[minIndex] == 0)
+                return float.MaxValue;
+            return minEnergy;
         }
 
         /// <summary>

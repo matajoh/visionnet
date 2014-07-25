@@ -21,6 +21,8 @@ using System.Collections.Generic;
 using VisionNET.Learning;
 using VisionNET.Comparison;
 using System.Threading.Tasks;
+using System.Linq;
+using System.Threading;
 
 namespace VisionNET.DecisionForests
 {
@@ -46,6 +48,7 @@ namespace VisionNET.DecisionForests
         private int _levelIndex;
         private float _entropy;
         private int _index;
+        private int _sparseCode;
 
         public DecisionTreeNode()
         {
@@ -157,6 +160,12 @@ namespace VisionNET.DecisionForests
         {
             get { return _index; }
             set { _index = value; }
+        }
+
+        public int SparseCode
+        {
+            get { return _sparseCode; }
+            set { _sparseCode = value; }
         }
 
         public ITestInfo<T, D> TestInfo
@@ -275,17 +284,18 @@ namespace VisionNET.DecisionForests
             _labelWeights = labelWeights;
             _nodeInfo = new Dictionary<int, INodeInfo<T,D>>();
             _testCounts = new Dictionary<string, int>();
-            _leafCount = gatherNodeInformation(_root, 1, 0);
+            _leafCount = gatherNodeInformation(_root, 1, 0, 0);
             _nodeCount = _nodeInfo.Count;
             _numLabels = numLabels;
             UpdateManager.WriteLine("Tree created with {0} leaf nodes", _leafCount);
         }
 
-        private int gatherNodeInformation(DecisionTreeNode<T,D> node, int index, int count)
+        private int gatherNodeInformation(DecisionTreeNode<T,D> node, int index, int code, int count)
         {
             _nodeInfo[index] = node;
             node.Tree = _treeLabel;
             node.Level = Utilities.Log2(index);
+            node.SparseCode = code;
             node.LevelIndex = index - Utilities.Pow2(node.Level);
             node.TreeIndex = index;
             if (node.NodeType == NodeType.Leaf)
@@ -301,8 +311,9 @@ namespace VisionNET.DecisionForests
                 if (!_testCounts.ContainsKey(node.TestInfo.Name))
                     _testCounts[node.TestInfo.Name] = 0;
                 _testCounts[node.TestInfo.Name]++;
-                count = gatherNodeInformation(node.Left, 2 * index, count);
-                count = gatherNodeInformation(node.Right, 2 * index + 1, count);
+                int diff = Utilities.Pow2(2 * (MaximumDepth - node.Level - 2));
+                count = gatherNodeInformation(node.Left, 2 * index, code, count);
+                count = gatherNodeInformation(node.Right, 2 * index + 1, code + diff, count);
                 return count;
             }
         }
@@ -316,7 +327,7 @@ namespace VisionNET.DecisionForests
         public int SetTreeLabel(byte label, int leafNodeStartIndex)
         {
             _treeLabel = label;
-            return gatherNodeInformation(_root, 1, leafNodeStartIndex);
+            return gatherNodeInformation(_root, 1, 0, leafNodeStartIndex);
         }
 
         /// <summary>
@@ -401,6 +412,91 @@ namespace VisionNET.DecisionForests
         }
 
         /// <summary>
+        /// Computes the response as the sum of all decision stump values in the path from root to leaf for the point.
+        /// </summary>
+        /// <param name="point">The point for which to compute the response</param>
+        /// <returns>The response</returns>
+        public float ComputeResponse(T point)
+        {
+            return ComputeResponse(point, (x, y) => x + y, () => 0.0f);
+        }
+
+        /// <summary>
+        /// Computes the response as the reduction of all decision stump values in the path from root to leaf for the point.
+        /// </summary>
+        /// <param name="point">The point for which to compute the response</param>
+        /// <param name="reduce">The function to use when reducing the values</param>
+        /// <param name="init">Initializes the reduction</param>
+        /// <returns>The response</returns>
+        public S ComputeResponse<S>(T point, Func<S, float, S> reduce, Func<S> init)
+        {
+            return computeResponse(_root, point, reduce, init);
+        }
+
+        private S computeResponse<S>(DecisionTreeNode<T, D> node, T point, Func<S, float, S> reduce, Func<S> init)
+        {
+            if (node.NodeType == NodeType.Leaf)
+                return init();
+
+            float value = node.Decider.Compute(point);
+            if (value < node.Decider.Threshold)
+            {
+                return reduce(computeResponse(node.Left, point, reduce, init), value);
+            }
+            else return reduce(computeResponse(node.Right, point, reduce, init), value);
+        }
+
+        /// <summary>
+        /// Compute the response as the sum of all decision stump values on each point's trip through the tree.
+        /// </summary>
+        /// <param name="points">The points to compute responses for</param>
+        /// <param name="responses">The array to store responses in</param>
+        public void ComputeResponses(List<T> points, float[] responses)
+        {
+            ComputeResponses(points, responses, (x, y) => x + y);
+        }
+
+        /// <summary>
+        /// Compute the response using the reduction function on the decision stump values on each point's trip through the tree.
+        /// </summary>
+        /// <param name="points">The points to compute responses for</param>
+        /// <param name="reduce">The reduction function</param>
+        /// <param name="responses">The array to store responses in</param>
+        public void ComputeResponses(List<T> points, float[] responses, Func<float, float, float> reduce)
+        {
+            computeResponses(_root, points, Enumerable.Range(0, points.Count).ToList(), responses, reduce);
+        }
+
+        private void computeResponses(DecisionTreeNode<T, D> node, List<T> points, List<int> indices, float[] responses, Func<float, float, float> reduce)
+        {
+            if (node.NodeType == NodeType.Leaf)
+                return;
+
+            List<T> left = new List<T>();
+            List<int> leftIndices = new List<int>();
+            List<T> right = new List<T>();
+            List<int> rightIndices = new List<int>();
+            for (int i = 0; i < points.Count; i++ )
+            {
+                float value = node.Decider.Compute(points[i]);
+                Decision decision = node.Decider.Decide(points[i]);
+                responses[indices[i]] = reduce(responses[indices[i]], value);
+                if (decision == Decision.Left)
+                {
+                    leftIndices.Add(indices[i]);
+                    left.Add(points[i]);
+                }
+                else
+                {
+                    rightIndices.Add(indices[i]);
+                    right.Add(points[i]);
+                }
+            }
+            computeResponses(node.Left, left, leftIndices, responses, reduce);
+            computeResponses(node.Right, right, rightIndices, responses, reduce);
+        }
+
+        /// <summary>
         /// Classifies an individual point.
         /// </summary>
         /// <param name="point">The point to classify</param>
@@ -430,6 +526,17 @@ namespace VisionNET.DecisionForests
         public float[] ClassifySoft(T point)
         {
             return findLeaf(_root, point).Distribution;
+        }
+
+        /// <summary>
+        /// Gets the sparse code for the provided point.  This code will allow this point to be compared to other points classified by this tree in Euclidean space
+        /// and have the distance reflect the number of shared branches.
+        /// </summary>
+        /// <param name="point">The point to assign a sparse code</param>
+        /// <returns>The sparse code</returns>
+        public int GetSparseCode(T point)
+        {
+            return findLeaf(_root, point).SparseCode;
         }
 
         internal static void assignLabels(DecisionTreeNode<T,D> node, List<T> points, INodeInfo<T,D>[] nodeInfo, List<int> indices)
@@ -682,7 +789,7 @@ namespace VisionNET.DecisionForests
             return true;
         }
 
-        private class DecisionResult
+        class DecisionResult
         {
             public float[] LeftDistribution { get; set; }
             public float[] RightDistribution { get; set; }
@@ -713,31 +820,32 @@ namespace VisionNET.DecisionForests
             float bestScore = float.MinValue;
             float[] bestLeftDistribution = null;
             float[] bestRightDistribution = null;
-            List<Task<DecisionResult>> tasks = new List<Task<DecisionResult>>();
-            TaskFactory<DecisionResult> taskFactory = new TaskFactory<DecisionResult>();
-            for (int i = 0; i < numFeatures; i++)
+            using (ThreadLocal<DecisionResult> results = new ThreadLocal<DecisionResult>(() => new DecisionResult { Score = bestScore }, true))
             {
-                tasks.Add(taskFactory.StartNew(() =>
+                Parallel.For(0, numFeatures, i =>
                 {
                     float[] leftDistribution;
                     float[] rightDistribution;
                     Decider<T, D> decider = new Decider<T, D>(factory);
                     decider.LoadData(data);
                     float score = decider.ChooseThreshold(numThresholds, numLabels, labelWeights, out leftDistribution, out rightDistribution);
-                    return new DecisionResult { LeftDistribution = leftDistribution, RightDistribution = rightDistribution, Decider = decider, Score = score };
-                }));
-            }
-            Task.WaitAll(tasks.ToArray());
-            foreach (var task in tasks)
-            {
-                if (task.Result.Score > bestScore)
+                    if (score > results.Value.Score)
+                    {
+                        results.Value = new DecisionResult { LeftDistribution = leftDistribution, RightDistribution = rightDistribution, Decider = decider, Score = score };
+                    }
+                });
+                foreach (var result in results.Values)
                 {
-                    bestLeftDistribution = task.Result.LeftDistribution;
-                    bestRightDistribution = task.Result.RightDistribution;
-                    bestDecider = task.Result.Decider;
-                    bestScore = task.Result.Score;
+                    if (result.Score > bestScore)
+                    {
+                        bestLeftDistribution = result.LeftDistribution;
+                        bestRightDistribution = result.RightDistribution;
+                        bestDecider = result.Decider;
+                        bestScore = result.Score;
+                    }
                 }
             }
+
             float support = 0;
             if (labelWeights != null)
             {
@@ -747,11 +855,12 @@ namespace VisionNET.DecisionForests
             else support = dataCount;
             if(bestScore == float.MinValue || dataCount < MinimumSupport){
                 UpdateManager.WriteLine("Stopping due to lack of data at depth {0}, {1} < {2}", depth, dataCount, MinimumSupport);
-                float[] distribution = new float[labelWeights.Length];
+                float[] distribution = new float[numLabels];
                 for (int i = 0; i < dataCount; i++)
                     distribution[data[i].Label]++;
-                for(int i=0; i<distribution.Length; i++)
-                    distribution[i] *= labelWeights[i];
+                if(labelWeights != null)
+                    for(int i=0; i<distribution.Length; i++)
+                        distribution[i] *= labelWeights[i];
                 return new DecisionTreeNode<T,D>(distribution);
             }
             if (depth == MaximumDepth - 2)

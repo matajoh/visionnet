@@ -26,7 +26,7 @@ namespace VisionNET.Texture
     /// Calculates a descriptor as an array of filter responses for a patch.
     /// </summary>
     [Serializable]
-    public class FilterBank
+    public class FilterBank : IEnumerable<Filter>
     {
         private List<Filter> _filters;
         private Rectangle _idealPatchSize;
@@ -159,6 +159,20 @@ namespace VisionNET.Texture
             for (int i = 0; i < desc.Length; i++)
                 desc[i] = _filters[i].Compute(point);
             return desc;
+        }
+
+        /// <summary>
+        /// Returns an enumerator for the filter bank
+        /// </summary>
+        /// <returns>The filter enumerator</returns>
+        public IEnumerator<Filter> GetEnumerator()
+        {
+            return _filters.GetEnumerator();
+        }
+
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }

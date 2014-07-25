@@ -36,6 +36,10 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">.\</SolutionDir>
     <RestorePackages>true</RestorePackages>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -88,11 +92,9 @@
     <Reference Include="Ionic.Zlib">
       <HintPath>References\Ionic.Zlib.dll</HintPath>
     </Reference>
-    <Reference Include="MathNet.Numerics">
-      <HintPath>packages\MathNet.Numerics.2.6.1\lib\net40\MathNet.Numerics.dll</HintPath>
-    </Reference>
-    <Reference Include="MathNet.Numerics.IO">
-      <HintPath>packages\MathNet.Numerics.2.6.1\lib\net40\MathNet.Numerics.IO.dll</HintPath>
+    <Reference Include="MathNet.Numerics, Version=3.0.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Z:\Documents\Visual Studio 2013\Projects\TaxonomyPOC\packages\MathNet.Numerics.3.0.2\lib\net40\MathNet.Numerics.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore">
       <RequiredTargetFramework>3.0</RequiredTargetFramework>
@@ -122,10 +124,12 @@
     <Compile Include="Comparison\TreeHistogram.cs" />
     <Compile Include="ConnectedComponents.cs" />
     <Compile Include="DecisionForests\DecisionTreeExtensions.cs" />
+    <Compile Include="DecisionForests\DecisionVine.cs" />
     <Compile Include="DecisionForests\FilterBankFeatureFactory.cs" />
     <Compile Include="DecisionForests\HaarFeatureFactory.cs" />
     <Compile Include="DecisionForests\INodeInfo.cs" />
     <Compile Include="DecisionForests\LeafImage.cs" />
+    <Compile Include="DecisionForests\PartFeatureFactory.cs" />
     <Compile Include="DecisionForests\RectangleFeatureFactory.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="FAST.cs" />
@@ -169,10 +173,15 @@
     <Compile Include="Registration\RANSAC.cs" />
     <Compile Include="Texture\BarFilter.cs" />
     <Compile Include="Texture\Filter.cs" />
+    <Compile Include="Texture\FilterBankFactory.cs" />
     <Compile Include="Texture\GaussianFilter.cs" />
     <Compile Include="Texture\EdgeFilter.cs" />
+    <Compile Include="Texture\IFilterFactory.cs" />
     <Compile Include="Texture\LaplacianFilter.cs" />
+    <Compile Include="Texture\LeungMalik.cs" />
     <Compile Include="Texture\MR8.cs" />
+    <Compile Include="Texture\PointFilter.cs" />
+    <Compile Include="Texture\PointFilterFactory.cs" />
     <Compile Include="VisionExtensions.cs" />
     <Compile Include="PGM.cs" />
     <Compile Include="PPM.cs" />

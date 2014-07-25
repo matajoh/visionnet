@@ -11,6 +11,7 @@ namespace VisionNET.Texture
     [Serializable]
     public class LaplacianFilter : Filter
     {
+        private float _stddev;
         /// <summary>
         /// Constructor.
         /// </summary>
@@ -19,6 +20,7 @@ namespace VisionNET.Texture
         public LaplacianFilter(float stddev, int channel)
             : base(ComputeFilter(stddev), channel)
         {
+            _stddev = stddev;
         }
 
         /// <summary>
@@ -33,7 +35,6 @@ namespace VisionNET.Texture
             float center = size * .5f;
             GaussianSecondDerivative sd = new GaussianSecondDerivative(0, stddev);
             float[,] filter = new float[size, size];
-            float sum = 0;
             for (int r = 0; r < size; r++)
             {
                 float dr = r + .5f - center;
@@ -42,15 +43,20 @@ namespace VisionNET.Texture
                     float dc = c + .5f - center;
                     float distance = (float)Math.Sqrt(dr * dr + dc * dc);
                     filter[r, c] = sd.Compute(distance);
-                    sum += filter[r, c];
                 }
             }
-            sum /= size * size;
-            for (int r = 0; r < size; r++)
-                for (int c = 0; c < size; c++)
-                    filter[r, c] -= sum;
 
             return filter;
         }
+
+        /// <summary>
+        /// Generates a string that describes the filter.
+        /// </summary>
+        /// <returns>A useful description</returns>
+        public override string ToString()
+        {
+            return string.Format("{0} lap s={1:f4}", base.ToString(), _stddev);
+        }        
+
     }
 }

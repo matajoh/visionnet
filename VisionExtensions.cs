@@ -27,7 +27,7 @@ using System.Drawing;
 using System.Windows.Interop;
 using System.Windows;
 using VisionNET.Learning;
-using MathNet.Numerics.LinearAlgebra.Generic;
+using MathNet.Numerics.LinearAlgebra;
 
 namespace VisionNET
 {
@@ -171,6 +171,11 @@ namespace VisionNET
         {
             Bitmap image = new Bitmap(width, height);
             int[] histogram = histogramValues.ToArray();
+            var brushes = Enumerable.Range(1, histogram.Length+1).Select(o =>
+            {
+                var color = LabelDictionary.LabelToColor((short)o);
+                return new SolidBrush(System.Drawing.Color.FromArgb(color.R, color.G, color.B));
+            }).ToArray();
 
             Graphics g = Graphics.FromImage(image);
             g.FillRectangle(System.Drawing.Brushes.White, 0, 0, width, height);
@@ -183,7 +188,7 @@ namespace VisionNET
             {
                 float binHeight = histogram[i] * height / max;
                 float y = height - binHeight;
-                g.FillRectangle(System.Drawing.Brushes.Black, x, y, binWidth, binHeight);
+                g.FillRectangle(brushes[i], x, y, binWidth, binHeight);
                 x += binWidth;
             }
 
@@ -253,15 +258,17 @@ namespace VisionNET
         /// </summary>
         /// <param name="distribution">Values to normalize</param>
         /// <returns>A normalized version of <paramref name="distribution"/></returns>
-        public static IEnumerable<float> Normalize(this IEnumerable<float> distribution)
+        public static float[] Normalize(this float[] distribution)
         {
-            float dirichlet = DIRICHLET / distribution.Count();
-            var result = from val in distribution
-                         select val + dirichlet;
+            float dirichlet = DIRICHLET / distribution.Length;
+            float[] result = new float[distribution.Length];
+            for (int i = 0; i < result.Length; i++)
+                result[i] = distribution[i] + dirichlet;
             float sum = result.Sum();
-            float norm = 1 / sum;
-            result = from val in result
-                     select val * norm;
+            float norm = 1f / sum;
+            for (int i = 0; i < result.Length; i++)
+                result[i] *= norm;
+
             return result;
         }
 
@@ -289,15 +296,30 @@ namespace VisionNET
         /// <typeparam name="T">Underlying type of the image</typeparam>
         /// <param name="image">The image</param>
         /// <param name="percentage">The probability that a point will be extracted</param>
+        /// <param name="border">Border around the edge of the image to exclude</param>
         /// <returns>A list of image points</returns>
-        public static IEnumerable<ImageDataPoint<T>> ExtractPoints<T>(this IMultichannelImage<T> image, double percentage)
+        public static IEnumerable<ImageDataPoint<T>> ExtractPoints<T>(this IMultichannelImage<T> image, double percentage, short border = 0)
         {
             int rows = image.Rows;
             int columns = image.Columns;
-            for (short r = 0; r < rows; r++)
-                for (short c = 0; c < columns; c++)
-                    if (ThreadsafeRandom.NextDouble() < percentage)
-                        yield return new ImageDataPoint<T>(image, r, c, 0);
+            int total = (int)((rows - 2*border) * (columns - 2*border) * percentage);
+
+            if (percentage <= .1)
+            {
+                for (int i = 0; i < total; i++)
+                {
+                    short row = (short)ThreadsafeRandom.Next(border, rows - border);
+                    short column = (short)ThreadsafeRandom.Next(border, rows - border);
+                    yield return new ImageDataPoint<T>(image, row, column, 0);
+                }
+            }
+            else
+            {
+                for (short r = border; r < rows - border; r++)
+                    for (short c = border; c < columns - border; c++)
+                        if (ThreadsafeRandom.NextDouble() < percentage)
+                            yield return new ImageDataPoint<T>(image, r, c, 0);
+            }
         }
 
         /// <summary>
@@ -645,6 +667,102 @@ namespace VisionNET
         }
 
         /// <summary>
+        /// Add one image to the right of another to create a new, wider image. 
+        /// </summary>
+        /// <typeparam name="T">The image type</typeparam>
+        /// <typeparam name="D">The underlying pixel data type</typeparam>
+        /// <param name="lhs">The left hand image</param>
+        /// <param name="rhs">The right hand image</param>
+        /// <returns>The combined image</returns>
+        public static T AppendRight<T, D>(this T lhs, T rhs) where T : IMultichannelImage<D>, new()
+        {
+            int newRows = Math.Max(lhs.Rows, rhs.Rows);
+            int newColumns = lhs.Columns + rhs.Columns;
+
+            int lStartRow = (newRows - lhs.Rows) / 2;
+            int rStartRow = (newRows - rhs.Rows) / 2;
+
+            D[, ,] values = new D[newRows, newColumns, lhs.Channels];
+            D[, ,] lhsValues = lhs.RawArray;
+            D[, ,] rhsValues = rhs.RawArray;
+            for (int r = 0; r < lhs.Rows; r++)
+                for (int c = 0; c < lhs.Columns; c++)
+                    for (int i = 0; i < lhs.Channels; i++)
+                        values[r + lStartRow, c, i] = lhsValues[r, c, i];
+            for (int r = 0; r < rhs.Rows; r++)
+                for (int c = 0; c < rhs.Columns; c++)
+                    for (int i = 0; i < rhs.Channels; i++)
+                        values[r + rStartRow, c + lhs.Columns, i] = rhsValues[r, c, i];
+            T result = new T();
+            result.SetData(values);
+            return result;
+        }
+
+        /// <summary>
+        /// Add one image to the bottom of another to create a new, taller image. 
+        /// </summary>
+        /// <typeparam name="T">The image type</typeparam>
+        /// <typeparam name="D">The underlying pixel data type</typeparam>
+        /// <param name="lhs">The top image</param>
+        /// <param name="rhs">The bottom image</param>
+        /// <returns>The combined image</returns>
+        public static T AppendBottom<T, D>(this T lhs, T rhs) where T : IMultichannelImage<D>, new()
+        {
+            int newRows = lhs.Rows + rhs.Rows;
+            int newColumns = Math.Max(lhs.Columns, rhs.Columns);
+
+            int lStartColumn = (newColumns - lhs.Columns) / 2;
+            int rStartColumn = (newColumns - rhs.Columns) / 2;
+
+            D[, ,] values = new D[newRows, newColumns, lhs.Channels];
+            D[, ,] lhsValues = lhs.RawArray;
+            D[, ,] rhsValues = rhs.RawArray;
+            for (int r = 0; r < lhs.Rows; r++)
+                for (int c = 0; c < lhs.Columns; c++)
+                    for (int i = 0; i < lhs.Channels; i++)
+                        values[r, c + lStartColumn, i] = lhsValues[r, c, i];
+            for (int r = 0; r < rhs.Rows; r++)
+                for (int c = 0; c < rhs.Columns; c++)
+                    for (int i = 0; i < rhs.Channels; i++)
+                        values[r + lhs.Rows, c + rStartColumn, i] = rhsValues[r, c, i];
+            T result = new T();
+            result.SetData(values);
+            return result;
+        }
+
+        /// <summary>
+        /// Add the values of the two arrays together.
+        /// </summary>
+        /// <param name="lhs">The first array</param>
+        /// <param name="rhs">The second array</param>
+        /// <returns>A new array with the sums of the values</returns>
+        public static float[] Add(this float[] lhs, float[] rhs)
+        {
+            if (lhs.Length != rhs.Length)
+                throw new ArgumentException("Array lengths must be equal");
+
+            float[] result = new float[lhs.Length];
+            for (int i = 0; i < lhs.Length; i++)
+                result[i] = lhs[i] + rhs[i];
+
+            return result;
+        }
+
+        /// <summary>
+        /// Multiply the elements of the array by the provided value.
+        /// </summary>
+        /// <param name="lhs">The array to use</param>
+        /// <param name="rhs">The value to scale by</param>
+        /// <returns>A new array with the multiplied values</returns>
+        public static float[] Multiply(this float[] lhs, float rhs)
+        {
+            float[] result = new float[lhs.Length];
+            for (int i = 0; i < lhs.Length; i++)
+                result[i] = lhs[i] * rhs;
+            return result;
+        }
+
+        /// <summary>
         /// Returns a random subset of a list of a given size.
         /// </summary>
         /// <typeparam name="T">The type of the items in the list</typeparam>
@@ -687,6 +805,86 @@ namespace VisionNET
                     break;
             }
             return dist;
+        }
+
+        /// <summary>
+        /// Calculates the Shannon entropy for a distribution.
+        /// </summary>
+        /// <param name="dist"></param>
+        /// <returns>The Shannon entropy</returns>
+        public static float CalculateEntropy(this float[] dist)
+        {
+            dist = dist.Normalize();
+            double count = 0;
+            double entropy = 0;
+            int length = dist.Length;
+            for (int i = 0; i < length; i++)
+                count += dist[i];
+            double norm = 1 / (count + length * DIRICHLET);
+            for (int c = 0; c < length; c++)
+            {
+                double classProb = (dist[c] + DIRICHLET) * norm;
+                entropy -= classProb * Math.Log(classProb, 2);
+            }
+            return (float)entropy;
+        }     
+   
+        /// <summary>
+        /// Computes a distribution over labels based upon the labels of the data points provided.
+        /// </summary>
+        /// <typeparam name="T">The data point type</typeparam>
+        /// <typeparam name="D">The underlying data type of the data point</typeparam>
+        /// <param name="data">The data points</param>
+        /// <param name="numLabels">The total number of expected labels in the data set</param>
+        /// <returns>An un-normalized distribution of data points per label</returns>
+        public static float[] ComputeDistribution<T,D>(this IEnumerable<T> data, int numLabels) where T:IDataPoint<D>
+        {
+            float[] result = new float[numLabels];
+            foreach (var point in data)
+                result[point.Label] += 1;
+            return result;
+        }
+
+        /// <summary>
+        /// Perform a pooling action on an image.
+        /// </summary>
+        /// <typeparam name="T">The type of the image</typeparam>
+        /// <typeparam name="D">The underlying pixel data type of the image</typeparam>
+        /// <param name="image">The image to pool</param>
+        /// <param name="frequency">The frequency with which to perform pooling (in pixels)</param>
+        /// <param name="stride">The size of the square pooling filter (in pixels)</param>
+        /// <param name="reduce">Reduction function for pooling the values under the filter</param>
+        /// <param name="init">Initialization value for the reduction</param>
+        /// <returns></returns>
+        public static T Pool<T, D>(this T image, int frequency, int stride, Func<D,D,D> reduce, Func<D> init) where T:IMultichannelImage<D>, new()
+        {
+            int border = stride / 2;
+            int rows = (image.Rows - border) / frequency;
+            int columns = (image.Columns - border) / frequency;
+            int channels = image.Channels;
+            D[,,] input = image.RawArray;
+            D[, ,] output = new D[rows, columns, channels];
+            for (int r = 0, rr = border; r < rows; r++, rr += frequency)
+            {
+                for (int c = 0, cc = border; c < columns; c++, cc += frequency)
+                {
+                    for (int i = 0; i < channels; i++)
+                    {
+                        D value = init();
+                        for (int dr = -border; dr < border; dr++)
+                        {
+                            for (int dc = -border; dc < border; dc++)
+                            {
+                                value = reduce(value, input[rr + dr, cc + dc, i]);
+                            }
+                        }
+                        output[r, c, i] = value;
+                    }
+                }
+            }
+            T result = new T();
+            result.SetData(output);
+            return result;
         }
     }
 }

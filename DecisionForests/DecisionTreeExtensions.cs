@@ -19,6 +19,8 @@ using VisionNET.Learning;
 using System.Collections.Generic;
 using VisionNET.Comparison;
 using System;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace VisionNET.DecisionForests
 {
@@ -247,6 +249,32 @@ namespace VisionNET.DecisionForests
             for (int i = 0; i < forest.TreeCount; i++)
                 forest[i].FillLeafImage(leafImage, image);
             return leafImage;
+        }
+
+        /// <summary>
+        /// Get the node information for all points from all trees.
+        /// </summary>
+        /// <typeparam name="T">The type of the data point</typeparam>
+        /// <typeparam name="D">The underlying feature type of the data point</typeparam>
+        /// <param name="forest">The forest to query</param>
+        /// <param name="points">The points to get info for</param>
+        /// <returns>The desired info</returns>
+        public static INodeInfo<T,D>[][] GetNodeInfo<T,D>(this DecisionForest<T, D> forest, List<T> points) where T:IDataPoint<D>
+        {
+            List<Task<INodeInfo<T, D>[]>> tasks = new List<Task<INodeInfo<T,D>[]>>();
+            TaskFactory<INodeInfo<T, D>[]> factory = new TaskFactory<INodeInfo<T,D>[]>();
+            for (int t = 0; t < forest.TreeCount; t++)
+            {
+                tasks.Add(factory.StartNew(arg =>
+                {
+                    DecisionTree<T, D> tree = (DecisionTree<T, D>)arg;
+                    INodeInfo<T, D>[] info = new INodeInfo<T, D>[points.Count];
+                    DecisionTree<T, D>.assignLabels(tree._root, points, info, Enumerable.Range(0, points.Count).ToList());
+                    return info;
+                }, forest[t]));
+            }
+            Task.WaitAll(tasks.ToArray());
+            return tasks.Select(o => o.Result).ToArray();
         }
     }
 }

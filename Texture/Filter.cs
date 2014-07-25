@@ -28,6 +28,8 @@ namespace VisionNET.Texture
             _rows = filterValues.GetLength(0);
             _columns = filterValues.GetLength(1);
             _channel = channel;
+
+            FilterNormalize(filterValues);
         }
 
         /// <summary>
@@ -49,6 +51,17 @@ namespace VisionNET.Texture
             get
             {
                 return _columns;
+            }
+        }
+
+        /// <summary>
+        /// The channel this filter will analyze.
+        /// </summary>
+        public int Channel
+        {
+            get
+            {
+                return _channel;
             }
         }
 
@@ -114,8 +127,6 @@ namespace VisionNET.Texture
                         int cc = startC + c;
                         if (cc >= 0 && cc < columns - 1)
                             patchScan += channels;
-                        //if (val != image[Math.Max(0, Math.Min(rr, rows - 1)), Math.Max(0, Math.Min(cc, columns - 1)), _channel])
-                        //    throw new Exception("testing");
                         sum += *filterPtr * val;
                     }
                 }
@@ -133,6 +144,117 @@ namespace VisionNET.Texture
         public unsafe float Compute(ImageDataPoint<float> point)
         {
             return compute(point.Row, point.Column, point.Image);
+        }
+
+        /// <summary>
+        /// Takes a matrix and prepares it for use as a filter by performing an L2 normalization, then giving it a zero mean, and then
+        /// scaling by the sum.
+        /// </summary>
+        /// <param name="matrix">The matrix to normalize in place</param>
+        public static void FilterNormalize(float[,] matrix)
+        {
+            int rows = matrix.GetLength(0);
+            int columns = matrix.GetLength(1);
+            float sum = 0;
+            float norm = 0;
+
+            bool isNegative = false;
+
+            for (int r = 0; r < rows; r++)
+                for (int c = 0; c < columns; c++)
+                {
+                    float value = matrix[r, c];
+                    sum += value * value;
+                    isNegative = isNegative || value < 0;
+                }
+        
+            if (sum == 0)
+                sum = 1;
+            norm = (float)(1.0 / Math.Sqrt(sum));
+
+            sum = 0;
+            for (int r = 0; r < rows; r++)
+                for (int c = 0; c < columns; c++)
+                {
+                    matrix[r, c] *= norm;
+                    sum += matrix[r, c];
+                }
+
+            if (isNegative)
+            {
+                float mean = sum / (rows * columns);
+                sum = 0;
+                for (int r = 0; r < rows; r++)
+                    for (int c = 0; c < columns; c++)
+                    {
+                        matrix[r, c] -= mean;
+                        sum += Math.Abs(matrix[r, c]);
+                    }
+            }
+
+            if (sum == 0)
+                sum = 1;
+            norm = 1.0f / sum;
+            for (int r = 0; r < rows; r++)
+                for (int c = 0; c < columns; c++)
+                    matrix[r, c] *= norm;
+        }
+
+        /// <summary>
+        /// Normalize an array using L2 normalization, then (if there are negative values) zero-ing out the mean and then finally doing an L1 normalization.
+        /// </summary>
+        /// <param name="vector"></param>
+        public static void FilterNormalize(float[] vector)
+        {
+            int length = vector.Length;
+            float sum = 0;
+            float norm = 0;
+
+            bool isNegative = false;
+
+            for (int i = 0; i < length; i++)
+            {
+                float value = vector[i];
+                sum += value * value;
+                isNegative = isNegative || value < 0;
+            }
+
+            if (sum == 0)
+                sum = 1;
+            norm = (float)(1.0 / Math.Sqrt(sum));
+
+            sum = 0;
+            for (int i = 0; i < length; i++)
+            {
+                vector[i] *= norm;
+                sum += vector[i];
+            }
+
+            if (isNegative)
+            {
+                float mean = sum / length;
+                sum = 0;
+                for (int i = 0; i < length; i++)
+                {
+                    vector[i] -= mean;
+                    sum += Math.Abs(vector[i]);
+                }
+            }
+
+            if (sum == 0)
+                sum = 1;
+            norm = 1.0f / sum;
+            for (int i = 0; i < length; i++)
+                vector[i] *= norm;
+        }
+
+        /// <summary>
+        /// Generates a string that describes the filter.
+        /// </summary>
+        /// <returns>A useful description</returns>
+        public override string ToString()
+        {
+            return string.Format("{0}x{1} c={2}", _rows, _columns, _channel);
         }
     }
 }

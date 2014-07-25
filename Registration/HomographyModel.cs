@@ -45,8 +45,8 @@ namespace VisionNET.Registration
 
             Matrix X = DenseMatrix.OfArray(XValues);
             var XTX = X.Transpose().Multiply(X);
-            Evd evd = XTX.Evd();
-            var eigenvector = evd.EigenVectors().Column(0);
+            var evd = XTX.Evd();
+            var eigenvector = evd.EigenVectors.Column(0);
 
             _transform = (Matrix)(new DenseMatrix(3, 3, eigenvector.ToArray()).Transpose());
             Consensus = data.Count;

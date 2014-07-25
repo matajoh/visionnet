@@ -16,9 +16,32 @@ namespace VisionNET
     {
         private FloatArrayHandler _handler;
 
-        private FilterBankImage()
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        public FilterBankImage()
         {
             _handler = new FloatArrayHandler();
+        }
+
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        /// <param name="rows">The number of rows in the image</param>
+        /// <param name="columns">The number of columns in the image</param>
+        /// <param name="filters">The number of filters (i.e. channels) in the image</param>
+        public FilterBankImage(int rows, int columns, int filters)
+        {
+            _handler = new FloatArrayHandler(rows, columns, filters);
+        }
+
+        /// <summary>
+        /// Constructor.
+        /// </summary>
+        /// <param name="data">The raw image data</param>
+        public FilterBankImage(float[, ,] data)
+        {
+            _handler = new FloatArrayHandler(data, false);
         }
 
         /// <summary>
@@ -30,7 +53,7 @@ namespace VisionNET
         public static unsafe FilterBankImage Create(IMultichannelImage<float> input, params FilterBank[] filterBanks)
         {
             FilterBankImage image = new FilterBankImage();
-            image.SetDimensions(input.Rows, input.Columns, filterBanks.Sum(o => o.Count));
+            image.SetDimensions(input.Rows, input.Columns, filterBanks.Sum(o => o.DescriptorLength));
             fixed (float* dataSrc = image.RawArray)
             {
                 float* dataPtr = dataSrc;
@@ -49,19 +72,6 @@ namespace VisionNET
                 }
             }
             return image;
-        }
-
-        /// <summary>
-        /// Read a filter bank image from a file.
-        /// </summary>
-        /// <param name="filename">The path to the filter bank image</param>
-        /// <returns>The filter bank image</returns>
-        public static unsafe FilterBankImage Read(string filename)
-        {
-            using (FileStream stream = File.Open(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                return Read(stream);
-            }
         }
 
         /// <summary>
@@ -87,19 +97,6 @@ namespace VisionNET
                             *dataPtr = input.ReadSingle();
             }
             return image;
-        }
-
-        /// <summary>
-        /// Write a filter bank image to a file.
-        /// </summary>
-        /// <param name="filename">The path to the file</param>
-        /// <param name="image">The image to write</param>
-        public static unsafe void Write(string filename, FilterBankImage image)
-        {
-            using (FileStream stream = File.Open(filename, FileMode.Create, FileAccess.Write, FileShare.None))
-            {
-                Write(stream, image);
-            }
         }
 
         /// <summary>

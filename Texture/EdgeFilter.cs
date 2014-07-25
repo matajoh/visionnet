@@ -11,6 +11,7 @@ namespace VisionNET.Texture
     [Serializable]
     public class EdgeFilter : Filter
     {
+        private float _stddev, _orientation;
         /// <summary>
         /// Constructor.
         /// </summary>
@@ -20,6 +21,8 @@ namespace VisionNET.Texture
         public EdgeFilter(float stddev, float orientation, int channel)
             : base(ComputeFilter(stddev, orientation), channel)
         {
+            _stddev = stddev;
+            _orientation = orientation;
         }
 
         /// <summary>
@@ -36,7 +39,6 @@ namespace VisionNET.Texture
             Gaussian gauss = new Gaussian(0, stddev * 3);
             GaussianFirstDerivative fd = new GaussianFirstDerivative(0, stddev);
             float[,] filter = new float[size, size];
-            float sum = 0;
             float cos = (float)Math.Cos(orientation);
             float sin = (float)Math.Sin(orientation);
             for (int r = 0; r < size; r++)
@@ -51,24 +53,19 @@ namespace VisionNET.Texture
                     float val2 = fd.Compute(rr);
                     float value = val1 * val2;
                     filter[r, c] = value;
-                    sum += value;
                 }
             }
-            float mean = sum / (size * size);
-            float variance = 0;
-            for (int r = 0; r < size; r++)
-                for (int c = 0; c < size; c++)
-                {
-                    filter[r, c] -= mean;
-                    variance += filter[r, c] * filter[r, c];
-                }
-            float norm = (float)Math.Sqrt(variance / (size * size));
-            norm = 1.0f / norm;
-            for (int r = 0; r < size; r++)
-                for (int c = 0; c < size; c++)
-                    filter[r, c] *= norm;
 
             return filter;
+        }
+
+        /// <summary>
+        /// Generates a string that describes the filter.
+        /// </summary>
+        /// <returns>A useful description</returns>
+        public override string ToString()
+        {
+            return string.Format("{0} edge s={1:f4} o={2:f4}", base.ToString(), _stddev, _orientation);
         }
     }
 }

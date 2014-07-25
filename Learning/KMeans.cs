@@ -173,8 +173,8 @@ namespace VisionNET.Learning
                 sw.Stop();
                 UpdateManager.WriteLine("Done [{0}ms]", sw.ElapsedMilliseconds);
                                 
-                float[] dist = _data.Select(o => o.FeatureValue).Normalize().ToArray();
-                Vector x = _data[dist.Sample()];
+                float[] dist = _data.Select(o => o.FeatureValue).ToArray().Normalize();
+                LabelVector x = _data[dist.Sample()];
                 _centers.Add(x.Clone() as LabelVector);
             }
         }

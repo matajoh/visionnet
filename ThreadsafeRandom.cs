@@ -30,7 +30,8 @@ namespace VisionNET
     /// </summary>
     public static class ThreadsafeRandom
     {
-        private static Random _rand;
+        private static Random _init;
+        private static ThreadLocal<Random> _rand;
         private static Semaphore _sem;
 
         /// <summary>
@@ -48,8 +49,17 @@ namespace VisionNET
 
         static ThreadsafeRandom()
         {
-            _rand = new Random();
             _sem = new Semaphore(1, 1);
+            _init = new Random();
+            _rand = new ThreadLocal<Random>(() =>
+            {
+                _sem.WaitOne();
+                try
+                {
+                    return new Random(_init.Next());
+                }
+                finally { _sem.Release(); }
+            });
         }
 
         /// <summary>
@@ -59,7 +69,7 @@ namespace VisionNET
         public static void Initialize(int newSeed)
         {
             _sem.WaitOne();
-            _rand = new Random(newSeed);
+            _init = new Random(newSeed);
             _sem.Release();
         }
 
@@ -69,10 +79,7 @@ namespace VisionNET
         /// <returns>A random double value</returns>
         public static double NextDouble()
         {
-            _sem.WaitOne();
-            double val = _rand.NextDouble();
-            _sem.Release();
-            return val;
+            return _rand.Value.NextDouble();
         }
 
         /// <summary>
@@ -81,10 +88,7 @@ namespace VisionNET
         /// <returns>A random integer value</returns>
         public static int Next()
         {
-            _sem.WaitOne();
-            int val = _rand.Next();
-            _sem.Release();
-            return val;
+            return _rand.Value.Next();
         }
 
         /// <summary>
@@ -95,10 +99,7 @@ namespace VisionNET
         /// <returns>A random integer</returns>
         public static int Next(int minValue, int maxValue)
         {
-            _sem.WaitOne();
-            int val = _rand.Next(minValue, maxValue);
-            _sem.Release();
-            return val;
+            return _rand.Value.Next(minValue, maxValue);
         }
 
         /// <summary>
@@ -108,10 +109,7 @@ namespace VisionNET
         /// <returns>A random integer</returns>
         public static int Next(int maxValue)
         {
-            _sem.WaitOne();
-            int val = _rand.Next(maxValue);
-            _sem.Release();
-            return val;
+            return _rand.Value.Next(maxValue);
         }
 
         /// <summary>
@@ -180,15 +178,20 @@ namespace VisionNET
         public static double[] GenerateRandomDistribution(int length)
         {
             double[] dist = new double[length];
-            double sum = 0;
-            for (int i = 0; i < dist.Length; i++)
+            for (int i = 0; i < length; i++)
             {
-                double val = Math.Pow(NextDouble(), 6);
+                double val = 3 * Math.Log(NextDouble());
                 dist[i] = val;
-                sum += val;
+            }
+            double min = dist.Min();
+            double sum = 0;
+            for (int i = 0; i < length; i++)
+            {
+                dist[i] = Math.Exp(dist[i] - min);
+                sum += dist[i];
             }
             double norm = 1.0 / sum;
-            for (int i = 0; i < dist.Length; i++)
+            for (int i = 0; i < length; i++)
                 dist[i] *= norm;
             return dist;
         }
